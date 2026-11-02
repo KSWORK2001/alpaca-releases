@@ -2,11 +2,13 @@
 
 # 🦙 Alpaca
 
+> 🌐 **Website: [kswork2001.github.io/alpaca-releases](https://kswork2001.github.io/alpaca-releases/)**
+
 **A local model runtime for Apple Silicon — sort of like Ollama, but better.**
 
 Web UI · OpenAI + Ollama APIs · web search · runtime model switching · SSD-offloaded MoE playground
 
-**⬇️ [Download the latest release below](https://github.com/KSWORK2001/alpaca-releases/releases/latest)**
+**⬇️ [Download the latest release below](https://github.com/KSWORK2001/alpaca-releases/releases/latest)** · 🌐 [Website](https://kswork2001.github.io/alpaca-releases/)
 
 </div>
 

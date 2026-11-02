@@ -289,7 +289,7 @@ async function ver() {
   try {
     const r = await fetch("https://api.github.com/repos/KSWORK2001/alpaca-releases/releases/latest");
     const j = await r.json();
-    const v = (j.tag_name || "").replace(/^app-/, "");
+    const v = (j.tag_name || "").replace(/^app-?v?/, "");
     if (v) document.getElementById("ver").textContent = "v" + v;
   } catch (e) { document.getElementById("ver").textContent = "see releases"; }
 }

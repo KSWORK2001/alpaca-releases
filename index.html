@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alpaca — local models, on your Mac</title>
+<meta name="description" content="Alpaca runs large language models locally on Apple Silicon — web UI, OpenAI + Ollama APIs, web search, and an agent-first CLI. Sort of like Ollama, but better.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦙</text></svg>">
+<style>
+:root {
+  --bg: #171717; --bg2: #1f1f1f; --panel: #242424; --panel2: #2b2b2b;
+  --border: #333; --text: #ececec; --dim: #9b9b9b; --accent: #10a37f; --accent2: #0d7a61;
+  --warn: #d9a441; --warnbg: rgba(217,164,65,.1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; overflow-x: hidden; }
+a { color: inherit; text-decoration: none; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.dim { color: var(--dim); }
+
+/* nav */
+nav { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(12px); background: rgba(23,23,23,.8); border-bottom: 1px solid var(--border); }
+nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+.brand { display: flex; gap: 10px; align-items: center; font-weight: 700; font-size: 17px; }
+.brand .logo { width: 28px; height: 28px; background: var(--accent2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+nav .links { display: flex; gap: 26px; font-size: 14.5px; color: var(--dim); }
+nav .links a:hover { color: var(--text); }
+@media (max-width: 760px) { nav .links { display: none; } }
+
+/* hero */
+.hero { padding: 88px 0 64px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; }
+@media (max-width: 900px) { .hero { grid-template-columns: 1fr; padding-top: 56px; } }
+h1 { font-size: 44px; line-height: 1.15; letter-spacing: -.02em; margin: 18px 0 14px; }
+.tagline { font-size: 18px; color: var(--dim); margin-bottom: 14px; }
+.kicker { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: var(--accent); background: rgba(16,163,127,.12); border: 1px solid rgba(16,163,127,.35); padding: 6px 12px; border-radius: 999px; }
+.sub { font-size: 16px; color: var(--dim); margin-bottom: 28px; max-width: 52ch; }
+.cta-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.btn { display: inline-block; padding: 12px 22px; border-radius: 12px; font-weight: 600; font-size: 15px; transition: transform .15s, background .15s; }
+.btn:hover { transform: translateY(-1px); }
+.btn.primary { background: var(--accent); color: #fff; }
+.btn.primary:hover { background: #12b891; }
+.btn.ghost { border: 1px solid var(--border); color: var(--text); }
+.btn.ghost:hover { border-color: #555; }
+.ver { font-size: 13px; color: var(--dim); }
+.ver b { color: var(--accent); }
+
+/* hero UI mock */
+.uimock { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,.45); }
+.uimock .bar { display: flex; gap: 6px; padding: 11px 14px; border-bottom: 1px solid var(--border); }
+.uimock .bar i { width: 10px; height: 10px; border-radius: 50%; background: #3d3d3d; }
+.uimock .bar i:first-child { background: #5c5c5c; }
+.uimock .body { display: flex; min-height: 330px; }
+.uimock .side { width: 118px; border-right: 1px solid var(--border); padding: 12px 10px; font-size: 10.5px; color: var(--dim); }
+.uimock .side .new { border: 1px solid var(--border); border-radius: 7px; padding: 6px 8px; margin-bottom: 10px; color: var(--text); }
+.uimock .side .item { padding: 6px 8px; border-radius: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.uimock .side .item.on { background: var(--panel2); color: var(--text); }
+.uimock .chat { flex: 1; padding: 16px 14px; display: flex; flex-direction: column; gap: 12px; }
+.msg { display: flex; gap: 9px; font-size: 12.5px; }
+.msg .av { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+.msg.user { flex-direction: row-reverse; }
+.msg.user .av { background: #4a4ad4; }
+.msg.user .bub { background: var(--panel2); border-radius: 10px; padding: 7px 11px; }
+.msg.ai .av { background: var(--accent2); }
+.msg .bub { max-width: 85%; }
+.composer { margin-top: auto; border: 1px solid var(--border); background: var(--panel); border-radius: 10px; padding: 9px 12px; font-size: 12px; color: var(--dim); display: flex; justify-content: space-between; }
+
+/* sections */
+section { padding: 72px 0; border-top: 1px solid var(--border); }
+h2 { font-size: 30px; letter-spacing: -.01em; margin-bottom: 10px; }
+.lead { color: var(--dim); font-size: 16.5px; max-width: 62ch; margin-bottom: 40px; }
+.grid { display: grid; gap: 16px; }
+.g3 { grid-template-columns: repeat(3, 1fr); }
+.g2 { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 900px) { .g3 { grid-template-columns: 1fr; } .g2 { grid-template-columns: 1fr; } }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 26px; transition: border-color .15s; }
+.card:hover { border-color: #4a4a4a; }
+.card .ico { font-size: 26px; margin-bottom: 14px; }
+.card h3 { font-size: 17.5px; margin-bottom: 8px; }
+.card p { font-size: 14.5px; color: var(--dim); }
+
+/* terminal */
+.term { background: #101010; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.term .tbar { display: flex; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--dim); }
+.term .tbar i { width: 10px; height: 10px; border-radius: 50%; background: #3d3d3d; }
+.term pre { padding: 18px 20px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; line-height: 1.75; overflow-x: auto; }
+.term .p { color: var(--accent); }
+.term .c { color: #6f6f6f; }
+.term .o { color: #d6d6d6; }
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .duo { grid-template-columns: 1fr; } }
+.snippet { background: #101010; border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; font-size: 12.8px; }
+.snippet .lang { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 10px; }
+.snippet pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overflow-x: auto; line-height: 1.7; }
+.k { color: #79b8ff; } .s { color: #9ecbff; } .cm { color: #6f6f6f; }
+
+/* playground */
+.warnbox { background: var(--warnbg); border: 1px solid var(--warn); border-radius: 14px; padding: 16px 20px; font-size: 14px; color: #e8c987; margin-top: 22px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 22px; }
+@media (max-width: 760px) { .stats { grid-template-columns: 1fr; } }
+.stat { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 20px; text-align: center; }
+.stat b { display: block; font-size: 26px; color: var(--accent); margin-bottom: 4px; }
+.stat span { font-size: 13px; color: var(--dim); }
+.stat.warn b { color: var(--warn); }
+
+/* privacy */
+.priv { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 900px) { .priv { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .priv { grid-template-columns: 1fr; } }
+
+/* download */
+#download .inst { background: #101010; border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; margin: 26px 0; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+#download code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13.5px; }
+.copy { background: var(--panel2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 7px 14px; font-size: 13px; cursor: pointer; }
+.copy:hover { border-color: #555; }
+.copy.done { border-color: var(--accent); color: var(--accent); }
+
+footer { border-top: 1px solid var(--border); padding: 34px 0 44px; color: var(--dim); font-size: 13.5px; }
+footer .wrap { display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#"><span class="logo">🦙</span> Alpaca</a>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a href="#apis">APIs</a>
+      <a href="#cli">CLI</a>
+      <a href="#playground">Playground</a>
+      <a href="#download">Download</a>
+      <a href="https://github.com/KSWORK2001/alpaca-releases" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero wrap">
+  <div>
+    <span class="kicker">Runs entirely on your Mac</span>
+    <h1>Local models,<br>without the compromise.</h1>
+    <p class="tagline">Sort of like Ollama, but better.</p>
+    <p class="sub">Alpaca runs open-weight models on Apple Silicon with a chat UI you'd actually use, both OpenAI and Ollama APIs, built-in web search, one-click model switching — and a CLI designed for AI agents to drive.</p>
+    <div class="cta-row">
+      <a class="btn primary" href="#download">Get Alpaca</a>
+      <a class="btn ghost" href="https://github.com/KSWORK2001/alpaca-releases/releases" target="_blank" rel="noopener">Release notes</a>
+      <span class="ver">latest: <b id="ver">…</b></span>
+    </div>
+  </div>
+
+  <div class="uimock" aria-hidden="true">
+    <div class="bar"><i></i><i></i><i></i></div>
+    <div class="body">
+      <div class="side">
+        <div class="new">＋ New chat</div>
+        <div class="item on">Refusal probes…</div>
+        <div class="item">MLX vs CUDA</div>
+        <div class="item">Essay feedback</div>
+        <div class="item">Image → poem</div>
+        <div class="item" style="margin-top:auto">⚙︎ Settings</div>
+      </div>
+      <div class="chat">
+        <div class="msg user"><div class="av">Y</div><div class="bub">Per search results, who develops MLX?</div></div>
+        <div class="msg ai"><div class="av">🦙</div><div class="bub">Apple develops the MLX framework — it's optimized for Apple Silicon's unified memory. <span class="dim">(web: 4 results)</span></div></div>
+        <div class="msg user"><div class="av">Y</div><div class="bub">Switch to the 8-bit build for me?</div></div>
+        <div class="msg ai"><div class="av">🦙</div><div class="bub">Loading <span class="mono">8-bit</span> (~27.5 GB) — MTP speculative decoding stays on. <span class="dim">(0 refusals, as documented)</span></div></div>
+        <div class="composer"><span>Message the model…</span><span>🔍 auto &nbsp;➤</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <h2>Everything a local runtime should be.</h2>
+    <p class="lead">One gateway process supervises the model server, the chat UI, two API dialects and web search — so switching models, downloading new ones, or wiring up your apps never means restarting anything by hand.</p>
+    <div class="grid g3">
+      <div class="card"><div class="ico">🖥️</div><h3>A chat UI you'd actually use</h3><p>ChatGPT-style layout with history sidebar, streaming markdown, image understanding, and per-conversation web search. LM Studio-depth generation settings when you want them.</p></div>
+      <div class="card"><div class="ico">⚡</div><h3>Tuned for Apple Silicon</h3><p>MLX under the hood: MTP speculative decoding (lossless), bounded KV cache for 262K-context models, continuous batching, and a wired-memory advisor for big quants.</p></div>
+      <div class="card"><div class="ico">🔍</div><h3>Web search, built in</h3><p>DuckDuckGo with page extraction, no API key. The model calls search as a tool and cites what it used — or force-ground every answer in fresh results.</p></div>
+      <div class="card"><div class="ico">📦</div><h3>Any model, one click</h3><p>Download from Hugging Face (gated repos too), switch at runtime, delete when done. Cached models are scanned and MoE models flagged automatically.</p></div>
+      <div class="card"><div class="ico">🐢</div><h3>Playground: bigger than RAM</h3><p>Repack a huge MoE model so experts page from your SSD via mmap + LRU, and run checkpoints that shouldn't fit. Loud, honest warnings included.</p></div>
+      <div class="card"><div class="ico">🤖</div><h3>Built for agents first</h3><p>Every CLI command speaks JSON, exits with a strict code contract, and <span class="mono">capabilities</span> self-describes the whole surface. Ollama has nothing like it.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="apis">
+  <div class="wrap">
+    <h2>Speaks both dialects.</h2>
+    <p class="lead">Point OpenAI clients at the <span class="mono">/v1</span> endpoint, or set <span class="mono">OLLAMA_HOST</span> and every Ollama integration just works. Vision, tools, streaming and sampling parameters pass straight through to the model.</p>
+    <div class="duo">
+      <div class="snippet"><div class="lang">Python — OpenAI SDK</div>
+<pre><span class="k">from</span> openai <span class="k">import</span> OpenAI
+client = OpenAI(base_url=<span class="s">"http://127.0.0.1:8080/v1"</span>,
+                api_key=<span class="s">"unused-on-loopback"</span>)
+r = client.chat.completions.create(
+    model=<span class="s">"alpaca"</span>,
+    messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>,
+               <span class="s">"content"</span>: <span class="s">"summarize this"</span>}])</pre></div>
+      <div class="snippet"><div class="lang">Shell — any Ollama client</div>
+<pre><span class="k">export</span> OLLAMA_HOST=http://127.0.0.1:8080
+ollama list
+ollama run qwen <span class="s">"hello"</span>
+
+<span class="cm"># or native API</span>
+curl localhost:8080/api/chat -d <span class="s">'{
+  "message": {"role": "user", "content": "hi"},
+  "web_search": "force"
+}'</span></pre></div>
+    </div>
+  </div>
+</section>
+
+<section id="cli">
+  <div class="wrap">
+    <h2>A CLI agents can drive.</h2>
+    <p class="lead">Machine-readable everywhere: <span class="mono">--json</span> on every command, exit codes <span class="mono">0/1/3/4</span> you can branch on, <span class="mono">--wait</span> flags that block until the model is ready — and a self-describing capabilities command, so an agent discovers the interface without reading docs.</p>
+    <div class="term">
+      <div class="tbar"><i></i><i></i><i></i>&nbsp;alpaca — zsh</div>
+      <pre><span class="p">$</span> alpaca capabilities --json          <span class="c"># agents start here</span>
+<span class="o">{ "commands": [ {"name": "status"}, {"name": "chat"},
+    {"name": "models"}, {"name": "playground"}, … ],
+  "exit_codes": {"0": "ok", "3": "gateway unreachable",
+                 "4": "model not ready"} }</span>
+<span class="p">$</span> alpaca models switch org/model-8bit --wait
+<span class="o">model ready: org/model-8bit</span>
+<span class="p">$</span> alpaca chat "what shipped in mlx this week?" \
+      --search force --json
+<span class="o">{ "content": "MLX 0.33 shipped…", "usage": {…} }</span>
+<span class="p">$</span> alpaca update --apply               <span class="c"># self-upgrade</span>
+<span class="o">updated 0.1.2 → 0.2.0</span></pre>
+    </div>
+  </div>
+</section>
+
+<section id="playground">
+  <div class="wrap">
+    <h2>Playground 🐢 — models bigger than your RAM.</h2>
+    <p class="lead">Repack a routed-MoE checkpoint and Alpaca streams its experts from your SSD through mmap with an LRU budget — so a model that shouldn't fit can still run. Honest numbers from a 48&nbsp;GB machine:</p>
+    <div class="stats">
+      <div class="stat warn"><b>~2 min</b><span>to repack an 8 GB checkpoint</span></div>
+      <div class="stat warn"><b>cold: slow</b><span>first prompt pages experts from SSD</span></div>
+      <div class="stat"><b>35 tok/s</b><span>warm — resident after first touch</span></div>
+    </div>
+    <div class="warnbox">⚠️ This is a playground for models you couldn't run at all otherwise — unbearably slow cold, permanently slow for truly huge sets. Alpaca will tell you so at every step.</div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Your machine. Your models. Your data.</h2>
+    <p class="lead">Alpaca binds to loopback by default and talks to nobody but you — and the model sources you choose.</p>
+    <div class="grid priv">
+      <div class="card"><div class="ico">🔒</div><h3>Loopback first</h3><p>Everything on 127.0.0.1 with a generated API key; expose to your LAN only if you deliberately choose to — then the key is mandatory.</p></div>
+      <div class="card"><div class="ico">💬</div><h3>Chats stay home</h3><p>Conversations live in a local folder. No telemetry, no accounts, no cloud.</p></div>
+      <div class="card"><div class="ico">🔑</div><h3>Your HF account</h3><p>Downloads use your Hugging Face token when a repo needs one — stored locally, used for pulls only.</p></div>
+      <div class="card"><div class="ico">🌐</div><h3>Search on your terms</h3><p>Web search runs from your machine, per conversation: auto, forced, or off.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="download">
+  <div class="wrap">
+    <h2>Get Alpaca.</h2>
+    <p class="lead">macOS on Apple Silicon with Python 3.12+. The installer checksum-verifies everything, sets up the environment, and puts <span class="mono">alpaca</span> on your PATH.</p>
+    <div class="inst">
+      <code id="cmd">curl -fsSL https://github.com/KSWORK2001/alpaca-releases/releases/latest/download/install.sh | bash</code>
+      <button class="copy" id="copy" onclick="copyCmd()">Copy</button>
+    </div>
+    <div class="cta-row">
+      <a class="btn primary" href="https://github.com/KSWORK2001/alpaca-releases/releases/latest" target="_blank" rel="noopener">Download release</a>
+      <a class="btn ghost" href="#cli">Read the CLI docs</a>
+      <span class="ver">then: <b>alpaca serve</b> &nbsp;·&nbsp; open <b>http://127.0.0.1:8080</b></span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>🦙 Alpaca — a local model runtime for Apple Silicon.</span>
+    <span><a href="https://github.com/KSWORK2001/alpaca-releases" target="_blank" rel="noopener">Releases</a> · <a href="https://github.com/KSWORK2001/alpaca-releases/releases/latest/download/latest.json" target="_blank" rel="noopener">Update feed</a> · MIT-style: do what you want, models are your responsibility</span>
+  </div>
+</footer>
+
+<script>
+async function ver() {
+  try {
+    const r = await fetch("https://api.github.com/repos/KSWORK2001/alpaca-releases/releases/latest");
+    const j = await r.json();
+    const v = (j.tag_name || "").replace(/^app-/, "");
+    if (v) document.getElementById("ver").textContent = "v" + v;
+  } catch (e) { document.getElementById("ver").textContent = "see releases"; }
+}
+function copyCmd() {
+  const b = document.getElementById("copy");
+  navigator.clipboard.writeText(document.getElementById("cmd").textContent.trim());
+  b.textContent = "Copied"; b.classList.add("done");
+  setTimeout(() => { b.textContent = "Copy"; b.classList.remove("done"); }, 1600);
+}
+ver();
+</script>
+</body>
+</html>
